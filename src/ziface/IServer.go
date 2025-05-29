@@ -7,4 +7,6 @@ type IServer interface {
 	Stop()
 	//服务器初始化
 	Init()
+	//注册路由
+	AddRouter(router IRouter)
 }

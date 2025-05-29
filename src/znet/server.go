@@ -13,6 +13,7 @@ type Server struct {
 	IP        string
 	Port      int
 	IPVersion string
+	Router    ziface.IRouter
 }
 
 func EchoHandlerFunc(conn *net.TCPConn, data []byte, datalen int) error {
@@ -47,7 +48,7 @@ func (s *Server) Start() {
 			log.Printf("[%s]accept err: %v\n", s.Name, err)
 			continue
 		}
-		dealConn := NewConnection(conn, uint(connID), EchoHandlerFunc)
+		dealConn := NewConnection(conn, uint(connID), s.Router)
 		connID++
 		dealConn.Start()
 	}
@@ -61,11 +62,16 @@ func (s *Server) Init() {
 	s.Start()
 }
 
+func (s *Server) AddRouter(router ziface.IRouter) {
+	s.Router = router
+	log.Printf("[%s] add router successfully\n", s.Name)
+}
 func NewServer(name string, ip string, port int) ziface.IServer {
 	return &Server{
 		Name:      name,
 		IP:        ip,
 		Port:      port,
 		IPVersion: "tcp",
+		Router:    nil,
 	}
 }

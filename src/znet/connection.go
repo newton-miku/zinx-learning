@@ -8,20 +8,22 @@ import (
 )
 
 type Connection struct {
-	conn       *net.TCPConn
-	connID     uint
-	isClosed   bool
-	HandlerApi ziface.ConnectionHandler
-	ExitChan   chan struct{} //退出信号，使用struct不占内存，效率更高
+	conn     *net.TCPConn
+	connID   uint
+	isClosed bool
+	//当前连接处理的方法Router
+	Router ziface.IRouter
+	//退出信号的channel
+	ExitChan chan struct{} //退出信号，使用struct不占内存，效率更高
 }
 
-func NewConnection(conn *net.TCPConn, connID uint, callback_func ziface.ConnectionHandler) *Connection {
+func NewConnection(conn *net.TCPConn, connID uint, router ziface.IRouter) *Connection {
 	return &Connection{
-		conn:       conn,
-		connID:     connID,
-		isClosed:   false,
-		HandlerApi: callback_func,
-		ExitChan:   make(chan struct{}),
+		conn:     conn,
+		connID:   connID,
+		isClosed: false,
+		Router:   router,
+		ExitChan: make(chan struct{}),
 	}
 }
 func (c *Connection) StartReader() {
@@ -34,10 +36,10 @@ func (c *Connection) StartReader() {
 			return
 		}
 
-		if err = c.HandlerApi(c.conn, buf, n); err != nil {
-			log.Printf("[Conn %d]\tcallback handler err: %v\n", c.connID, err)
-			return
-		}
+		req := NewRequest(c, buf[:n])
+		c.Router.PreHandle(req)
+		c.Router.Handle(req)
+		c.Router.PostHandle(req)
 	}
 }
 func (c *Connection) StartWriter() {
