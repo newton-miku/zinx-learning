@@ -28,8 +28,8 @@ func NewConnection(conn *net.TCPConn, connID uint, router ziface.IRouter) *Conne
 }
 func (c *Connection) StartReader() {
 	defer c.Stop()
+	buf := make([]byte, 512)
 	for {
-		buf := make([]byte, 512)
 		n, err := c.conn.Read(buf)
 		if err != nil && err != io.EOF {
 			log.Printf("[Conn %d]\tread err: %v\n", c.connID, err)
@@ -37,9 +37,13 @@ func (c *Connection) StartReader() {
 		}
 
 		req := NewRequest(c, buf[:n])
-		c.Router.PreHandle(req)
-		c.Router.Handle(req)
-		c.Router.PostHandle(req)
+		if c.Router != nil {
+			c.Router.PreHandle(req)
+			c.Router.Handle(req)
+			c.Router.PostHandle(req)
+		} else {
+			log.Printf("[Conn %d] warning: router is nil", c.connID)
+		}
 	}
 }
 func (c *Connection) StartWriter() {

@@ -1,7 +1,6 @@
 package znet
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -16,15 +15,6 @@ type Server struct {
 	Router    ziface.IRouter
 }
 
-func EchoHandlerFunc(conn *net.TCPConn, data []byte, datalen int) error {
-	log.Printf("[%s] recv from client: %s\n", conn.RemoteAddr().String(), string(data[:datalen]))
-	_, err := conn.Write(data[:datalen])
-	if err != nil {
-		log.Printf("[%s]send data err: %v\n", conn.RemoteAddr().String(), err)
-		return errors.New("EchoHandlerFunc send data err")
-	}
-	return nil
-}
 func (s *Server) Start() {
 	log.Printf("[%s] Listening and accepting at %s Port %d\n", s.Name, s.IP, s.Port)
 	Addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
