@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -28,7 +29,7 @@ func NewConnection(conn *net.TCPConn, connID uint, router ziface.IRouter) *Conne
 }
 func (c *Connection) StartReader() {
 	defer c.Stop()
-	buf := make([]byte, 512)
+	buf := make([]byte, utils.GlobalObject.MaxPacketSize)
 	for {
 		n, err := c.conn.Read(buf)
 		if err != nil && err != io.EOF {

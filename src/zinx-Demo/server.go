@@ -12,7 +12,7 @@ type EchoRouter struct {
 
 func (r *EchoRouter) PreHandle(request ziface.IRequest) {
 	log.Printf("[Echo] PreHandle %s\n", request.GetData())
-	err := request.GetConnection().Send([]byte("Welcome to Zinx v0.3\n"))
+	err := request.GetConnection().Send([]byte("Welcome to Zinx v0.4\n"))
 	if err != nil {
 		log.Printf("[Echo] PreHandle Send Error %s\n", err)
 	}
@@ -37,7 +37,7 @@ func (r *EchoRouter) PostHandle(request ziface.IRequest) {
 
 func runServer() {
 	//创建一个server服务
-	s := znet.NewServer("[zinx v0.3]", "127.0.0.1", 8999)
+	s := znet.NewServer()
 	s.AddRouter(&EchoRouter{})
 	//启动server
 	s.Start()
