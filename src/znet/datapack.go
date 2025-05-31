@@ -50,7 +50,7 @@ func (dp *DataPack) Unpack(data []byte) (ziface.IMessage, error) {
 	}
 
 	if msg.dataLen > utils.GlobalObject.MaxPacketSize && utils.GlobalObject.MaxPacketSize > 0 {
-		return nil, errors.New("too Large msg data recv!")
+		return nil, errors.New("too Large msg data recv")
 	}
 	return msg, nil
 }
