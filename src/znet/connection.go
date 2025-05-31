@@ -2,9 +2,9 @@ package znet
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
-	"log/slog"
 	"net"
 	"zinx/ziface"
 )
@@ -102,11 +102,11 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 	// 将数据封包
 	msgPack, err := dp.Pack(NewMessage(msgID, data))
 	if err != nil {
-		return errors.New("pack msg err: %v", err)
+		return fmt.Errorf("pack msg err:%v", err)
 	}
 	// 发送数据封包
-	if _,err: =c.conn.Write(msgPack);err!=nil{ 
-		return errors.New( "write msg err: %v", err)
+	if _, err = c.conn.Write(msgPack); err != nil {
+		return fmt.Errorf("write msg err:%v", err)
 	}
 	return nil
 }
