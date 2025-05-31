@@ -1,10 +1,11 @@
 package znet
 
 import (
+	"errors"
 	"io"
 	"log"
+	"log/slog"
 	"net"
-	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -29,15 +30,29 @@ func NewConnection(conn *net.TCPConn, connID uint, router ziface.IRouter) *Conne
 }
 func (c *Connection) StartReader() {
 	defer c.Stop()
-	buf := make([]byte, utils.GlobalObject.MaxPacketSize)
 	for {
-		n, err := c.conn.Read(buf)
-		if err != nil && err != io.EOF {
-			log.Printf("[Conn %d]\tread err: %v\n", c.connID, err)
-			return
+		dp := NewDataPack()
+		headData := make([]byte, dp.GetHeadLen())
+		_, err := io.ReadFull(c.GetTCPConnection(), headData)
+		if err != nil {
+			log.Printf("[Conn %d] read head err: %v\n", c.connID, err)
+			break
 		}
-
-		req := NewRequest(c, buf[:n])
+		msg, err := dp.Unpack(headData)
+		if err != nil && err != io.EOF {
+			log.Printf("[Conn %d] unpack err: %v\n", c.connID, err)
+			break
+		}
+		if msg.GetDataLen() > 0 {
+			data := make([]byte, msg.GetDataLen())
+			_, err := io.ReadFull(c.GetTCPConnection(), data)
+			if err != nil {
+				log.Printf("[Conn %d] read data err: %v\n", c.connID, err)
+				break
+			}
+			msg.SetData(data)
+		}
+		req := NewRequest(c, *msg.(*Message))
 		if c.Router != nil {
 			c.Router.PreHandle(req)
 			c.Router.Handle(req)
@@ -47,6 +62,7 @@ func (c *Connection) StartReader() {
 		}
 	}
 }
+
 func (c *Connection) StartWriter() {
 
 }
@@ -76,13 +92,21 @@ func (c *Connection) GetConnID() uint {
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.conn.RemoteAddr()
 }
-func (c *Connection) Send(data []byte) error {
+func (c *Connection) SendMsg(msgID uint32, data []byte) error {
+	// 如果连接已关闭
 	if c.isClosed {
-		return nil
+		return errors.New("connection is closed")
 	}
-	_, err := c.conn.Write(data)
+	// 创建一个数据包
+	dp := NewDataPack()
+	// 将数据封包
+	msgPack, err := dp.Pack(NewMessage(msgID, data))
 	if err != nil {
-		return err
+		return errors.New("pack msg err: %v", err)
+	}
+	// 发送数据封包
+	if _,err: =c.conn.Write(msgPack);err!=nil{ 
+		return errors.New( "write msg err: %v", err)
 	}
 	return nil
 }

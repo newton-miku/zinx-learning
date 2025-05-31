@@ -40,7 +40,7 @@ func (dp *DataPack) Pack(message ziface.IMessage) ([]byte, error) {
 func (dp *DataPack) Unpack(data []byte) (ziface.IMessage, error) {
 	databuf := bytes.NewReader(data)
 	msg := &Message{}
-	err := binary.Read(databuf, binary.LittleEndian, &msg.DataLen)
+	err := binary.Read(databuf, binary.LittleEndian, &msg.dataLen)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (dp *DataPack) Unpack(data []byte) (ziface.IMessage, error) {
 		return nil, err
 	}
 
-	if msg.DataLen > utils.GlobalObject.MaxPacketSize && utils.GlobalObject.MaxPacketSize > 0 {
+	if msg.dataLen > utils.GlobalObject.MaxPacketSize && utils.GlobalObject.MaxPacketSize > 0 {
 		return nil, errors.New("too Large msg data recv!")
 	}
 	return msg, nil

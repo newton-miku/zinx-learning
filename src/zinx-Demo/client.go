@@ -32,7 +32,7 @@ func init() {
 func runClient() {
 	// 等待2秒，避免服务器未启动完成
 	time.Sleep(time.Second * 2)
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ServAdd.IP, ServAdd.Port))
+	conn, err := net.Dial("tcp", net.JoinHostPort(ServAdd.IP, fmt.Sprint(ServAdd.Port)))
 	if err != nil {
 		log.Fatalf("[%s]Client dial err: %v\n", "Client", err)
 	}

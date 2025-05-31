@@ -13,8 +13,8 @@ type IConnection interface {
 	GetConnID() uint
 	// 获取远端地址
 	RemoteAddr() net.Addr
-	// 发送数据
-	Send([]byte) error
+	// 发送消息
+	SendMsg(uint32, []byte) error
 }
 
 type ConnectionHandler func(*net.TCPConn, []byte, int) error
