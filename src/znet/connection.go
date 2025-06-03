@@ -13,19 +13,19 @@ type Connection struct {
 	conn     *net.TCPConn
 	connID   uint
 	isClosed bool
-	//当前连接处理的方法Router
-	Router ziface.IRouter
+	// 消息处理器
+	MsgHandler ziface.IMsgHandler
 	//退出信号的channel
 	ExitChan chan struct{} //退出信号，使用struct不占内存，效率更高
 }
 
-func NewConnection(conn *net.TCPConn, connID uint, router ziface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, connID uint, msgHandler ziface.IMsgHandler) *Connection {
 	return &Connection{
-		conn:     conn,
-		connID:   connID,
-		isClosed: false,
-		Router:   router,
-		ExitChan: make(chan struct{}),
+		conn:       conn,
+		connID:     connID,
+		isClosed:   false,
+		MsgHandler: msgHandler,
+		ExitChan:   make(chan struct{}),
 	}
 }
 func (c *Connection) StartReader() {
@@ -53,13 +53,7 @@ func (c *Connection) StartReader() {
 			msg.SetData(data)
 		}
 		req := NewRequest(c, *msg.(*Message))
-		if c.Router != nil {
-			c.Router.PreHandle(req)
-			c.Router.Handle(req)
-			c.Router.PostHandle(req)
-		} else {
-			log.Printf("[Conn %d] warning: router is nil", c.connID)
-		}
+		go c.MsgHandler.DoMsgHandler(req)
 	}
 }
 

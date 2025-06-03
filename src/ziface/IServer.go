@@ -8,5 +8,5 @@ type IServer interface {
 	//服务器初始化
 	Init()
 	//注册路由
-	AddRouter(router IRouter)
+	AddRouter(msgID uint32, router IRouter)
 }

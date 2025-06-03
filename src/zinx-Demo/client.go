@@ -39,10 +39,11 @@ func runClient() {
 	}
 	log.Printf("[%s]Client start\n", "Client")
 	defer conn.Close()
+	var msgType uint32 = 0
 	for {
 		sft := time.Now().Format("2006-01-02 15:04:05")
 		dp := znet.NewDataPack()
-		msg, err := dp.Pack(znet.NewMessage(1, []byte(sft)))
+		msg, err := dp.Pack(znet.NewMessage(msgType, []byte(sft)))
 		if err != nil {
 			log.Fatalf("[%s]Client pack err: %v\n", "Client", err)
 		}
@@ -67,6 +68,9 @@ func runClient() {
 					log.Fatalf("[%s]Client read err: %v\n", "Client", err)
 				}
 				log.Printf("[%s]Client recv msg ID=%d msgInfo=%s\n", "Client", msgHead.GetMsgID(), string(data))
+			}
+			if msgHead.GetMsgID() == 0 {
+				msgType = 1
 			}
 		}()
 		time.Sleep(1 * time.Second)
