@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net"
 	"zinx/ziface"
 )
@@ -15,6 +16,8 @@ type Connection struct {
 	isClosed bool
 	// 消息处理器
 	MsgHandler ziface.IMsgHandler
+	//发送给客户端的消息的channel
+	msgChan chan []byte
 	//退出信号的channel
 	ExitChan chan struct{} //退出信号，使用struct不占内存，效率更高
 }
@@ -25,6 +28,7 @@ func NewConnection(conn *net.TCPConn, connID uint, msgHandler ziface.IMsgHandler
 		connID:     connID,
 		isClosed:   false,
 		MsgHandler: msgHandler,
+		msgChan:    make(chan []byte),
 		ExitChan:   make(chan struct{}),
 	}
 }
@@ -58,6 +62,20 @@ func (c *Connection) StartReader() {
 }
 
 func (c *Connection) StartWriter() {
+	for {
+		select {
+		case data := <-c.msgChan:
+			_, err := c.conn.Write(data)
+			if err != nil {
+				slog.Error("Client", "write err", err)
+				c.ExitChan <- struct{}{}
+				return
+			}
+		case <-c.ExitChan:
+			//Reader goroutine 已退出，Writer goroutine 退出
+			return
+		}
+	}
 
 }
 func (c *Connection) Start() {
@@ -71,8 +89,10 @@ func (c *Connection) Stop() {
 	if !c.isClosed {
 		log.Printf("[Conn %d]\tconnection stop...\n", c.connID)
 		c.isClosed = true
+		c.ExitChan <- struct{}{}
 		c.conn.Close()
 		close(c.ExitChan)
+		close(c.msgChan)
 	} else {
 		log.Printf("[Conn %d]!!!\tconnection already stop...\n", c.connID)
 	}
@@ -99,8 +119,6 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 		return fmt.Errorf("pack msg err:%v", err)
 	}
 	// 发送数据封包
-	if _, err = c.conn.Write(msgPack); err != nil {
-		return fmt.Errorf("write msg err:%v", err)
-	}
+	c.msgChan <- msgPack
 	return nil
 }
