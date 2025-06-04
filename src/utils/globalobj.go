@@ -15,10 +15,20 @@ type GlobalObj struct {
 	Port   int
 
 	//Zinx配置
-	Name          string
-	Version       string
+	// 服务器名称
+	Name string
+	// 服务器版本
+	Version string
+	// 最大包大小
 	MaxPacketSize uint32
-	MaxConn       uint32
+	// 最大连接数
+	MaxConn uint32
+	// 工作池数量
+	WorkerPoolSize uint32
+	// 任务队列最大长度
+	MaxWorkerTaskQueueSize uint32
+	// 日志等级
+	LogLevel string
 }
 
 var GlobalObject *GlobalObj
@@ -39,12 +49,29 @@ func (gb *GlobalObj) Reload() error {
 
 func init() {
 	GlobalObject = &GlobalObj{
-		Name:          "ZinxServerApp",
-		Version:       "v0.7",
-		MaxPacketSize: 4096,
-		MaxConn:       1000,
-		Host:          "0.0.0.0",
-		Port:          8999,
+		Name:                   "ZinxServerApp",
+		Version:                "v0.8",
+		MaxPacketSize:          4096,
+		MaxConn:                1000,
+		Host:                   "0.0.0.0",
+		Port:                   8999,
+		WorkerPoolSize:         10,
+		MaxWorkerTaskQueueSize: 1024,
+		LogLevel:               "INFO",
 	}
 	GlobalObject.Reload()
+	var level slog.Level
+	switch GlobalObject.LogLevel {
+	case "DEBUG":
+		level = slog.LevelDebug
+	case "INFO":
+		level = slog.LevelInfo
+	case "WARN":
+		level = slog.LevelWarn
+	case "ERROR":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
+	slog.SetLogLoggerLevel(level)
 }

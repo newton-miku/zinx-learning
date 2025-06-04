@@ -3,5 +3,7 @@
   "Host": "0.0.0.0",
   "Port": 8999,
   "MaxConn": 1024,
-  "MaxPackageSize": 4096
+  "MaxPackageSize": 4096,
+  "WorkerPoolSize": 10,
+  "logLevel": "DEBUG"
 }

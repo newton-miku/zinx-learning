@@ -46,6 +46,7 @@ func (s *Server) Start() {
 	}
 	slog.Info(fmt.Sprintf("[%s]", s.Name), "msg", "Zinx Server is running")
 
+	s.MsgHandler.CreatWorkerPool()
 	connID := 0
 	for {
 		//服务器开始接受连接

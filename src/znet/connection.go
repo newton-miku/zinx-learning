@@ -7,6 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -57,7 +58,14 @@ func (c *Connection) StartReader() {
 			msg.SetData(data)
 		}
 		req := NewRequest(c, *msg.(*Message))
-		go c.MsgHandler.DoMsgHandler(req)
+		// 如果启用了工作池机制
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			//将请求发送到工作池中
+			c.MsgHandler.SendReqToWorker(req)
+		} else {
+			// 没有启用工作池，直接处理
+			go c.MsgHandler.DoMsgHandler(req)
+		}
 	}
 }
 

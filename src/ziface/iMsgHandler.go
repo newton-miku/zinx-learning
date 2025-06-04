@@ -5,4 +5,8 @@ type IMsgHandler interface {
 	DoMsgHandler(request IRequest)
 	//  添加路由
 	AddRouter(msgID uint32, router IRouter)
+	// 创建Worker工作池
+	CreatWorkerPool()
+	// 将请求发送到Worker工作池中
+	SendReqToWorker(req IRequest)
 }
