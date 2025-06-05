@@ -56,7 +56,7 @@ func (mh *MsgHandler) StartWorker(workerID int, workerQueue chan ziface.IRequest
 }
 
 func (mh *MsgHandler) SendReqToWorker(req ziface.IRequest) {
-	workerID := uint32(req.GetConnection().GetConnID()) % mh.workerPoolSize
+	workerID := req.GetConnection().GetConnID() % mh.workerPoolSize
 	slog.Debug("SendMsgToWorker", "ConnID", req.GetConnection().GetConnID(), "workerID", workerID, "msg", "send req to worker")
 	mh.taskQueue[workerID] <- req
 }

@@ -10,7 +10,7 @@ type IConnection interface {
 	// 获取连接绑定的TCP socket
 	GetTCPConnection() *net.TCPConn
 	// 获取连接ID
-	GetConnID() uint
+	GetConnID() uint32
 	// 获取远端地址
 	RemoteAddr() net.Addr
 	// 发送消息

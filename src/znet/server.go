@@ -10,15 +10,16 @@ import (
 )
 
 type Server struct {
-	Name       string
-	IP         string
-	Port       int
-	IPVersion  string
-	MsgHandler ziface.IMsgHandler
+	Name string
+	IP   string
+	Port int
+	// 监听的ip类型 "tcp", "tcp4", "tcp6"
+	IPVersion   string
+	MsgHandler  ziface.IMsgHandler
+	ConnManager ziface.IConnectionManager
 }
 
 func (s *Server) Start() {
-	log.Printf("[%s] Listening and accepting at %s Port %d\n", s.Name, s.IP, s.Port)
 	addStr := fmt.Sprintf("%s:%d", s.IP, s.Port)
 	slog.Info("[Zinx Server]",
 		slog.Group("server",
@@ -36,18 +37,26 @@ func (s *Server) Start() {
 	Addr, err := net.ResolveTCPAddr(s.IPVersion, addStr)
 	//检查Addr是否有误
 	if err != nil {
-		log.Printf("[%s]start Zinx server failed, ip ver:%s\t addr err: %v\n", s.Name, s.IPVersion, err)
+		slog.Error("[Zinx Server]",
+			"ip ver", s.IPVersion,
+			slog.String("addr", addStr),
+			"msg", "ResolveTCPAddr Error",
+			"err", err)
 		return
 	}
 	listener, err := net.ListenTCP(s.IPVersion, Addr)
 	if err != nil {
-		log.Printf("[%s]start Zinx server failed, ip ver:%s\t listen err: %v\n", s.Name, s.IPVersion, err)
+		slog.Error("[Zinx Server]",
+			"ip ver", s.IPVersion,
+			"addr", addStr,
+			"msg", "listen Error",
+			"err", err)
 		return
 	}
 	slog.Info(fmt.Sprintf("[%s]", s.Name), "msg", "Zinx Server is running")
 
 	s.MsgHandler.CreatWorkerPool()
-	connID := 0
+	connID := uint32(0)
 	for {
 		//服务器开始接受连接
 		conn, err := listener.AcceptTCP()
@@ -55,13 +64,27 @@ func (s *Server) Start() {
 			log.Printf("[%s]accept err: %v\n", s.Name, err)
 			continue
 		}
-		dealConn := NewConnection(conn, uint(connID), s.MsgHandler)
+
+		// 判断连接数是否已达最大
+		if s.ConnManager.Len() >= int(utils.GlobalObject.MaxConn) {
+			slog.Warn("Server", "MaxConnections", utils.GlobalObject.MaxConn, "msg", "too many connections")
+			// TODO 返回服务器超连接信息
+			conn.Close()
+			continue
+		}
+		dealConn := NewConnection(s, conn, connID, s.MsgHandler)
 		connID++
 		dealConn.Start()
 	}
 }
 
+func (s *Server) GetConnectionManager() ziface.IConnectionManager {
+	return s.ConnManager
+}
+
 func (s *Server) Stop() {
+	slog.Info(fmt.Sprintf("[%s]", s.Name), "msg", "Zinx Server is stopping")
+	s.ConnManager.ClearConn()
 
 }
 
@@ -74,10 +97,11 @@ func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
 }
 func NewServer() ziface.IServer {
 	return &Server{
-		Name:       utils.GlobalObject.Name,
-		IP:         utils.GlobalObject.Host,
-		Port:       utils.GlobalObject.Port,
-		IPVersion:  "tcp",
-		MsgHandler: NewMsgHandler(),
+		Name:        utils.GlobalObject.Name,
+		IP:          utils.GlobalObject.Host,
+		Port:        utils.GlobalObject.Port,
+		IPVersion:   "tcp",
+		MsgHandler:  NewMsgHandler(),
+		ConnManager: NewConnectionManager(),
 	}
 }

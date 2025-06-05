@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"zinx/ziface"
 	"zinx/znet"
 )
@@ -12,7 +13,11 @@ type HelloRouter struct {
 }
 
 func (r *HelloRouter) Handle(request ziface.IRequest) {
-	log.Printf("[Welcome Server] Handle msg from client Addr=%s msg=%s\n", request.GetConnection().RemoteAddr(), request.GetData())
+	slog.Debug("Router",
+		"Router Name", "Welcome",
+		"ClientAddr", request.GetConnection().RemoteAddr(),
+		"msgID", request.GetMsgID(),
+		"msg", request.GetData())
 	err := request.GetConnection().SendMsg(0, []byte("Welcome to Zinx Welcom Server"))
 	if err != nil {
 		log.Printf("[Welcome Server] Handle Send Error %s\n", err)
@@ -24,7 +29,11 @@ type EchoRouter struct {
 }
 
 func (r *EchoRouter) Handle(request ziface.IRequest) {
-	log.Printf("[Echo Server] Handle msg from client Addr=%s msg=%s\n", request.GetConnection().RemoteAddr(), request.GetData())
+	slog.Debug("Router",
+		"RouterName", "Echo",
+		"ClientAddr", request.GetConnection().RemoteAddr(),
+		"msgID", request.GetMsgID(),
+		"msg", request.GetData())
 	msg := fmt.Sprintf("Echo Server: %s", request.GetData())
 	err := request.GetConnection().SendMsg(1, []byte(msg))
 	if err != nil {
