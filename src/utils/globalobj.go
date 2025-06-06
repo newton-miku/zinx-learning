@@ -36,12 +36,12 @@ var GlobalObject *GlobalObj
 func (gb *GlobalObj) Reload() error {
 	data, err := os.ReadFile("conf/zinx.json")
 	if err != nil {
-		slog.Error("Reload", "err", err)
+		slog.Error("[Reload]", "read err", err)
 		return err
 	}
 	err = json.Unmarshal(data, GlobalObject)
 	if err != nil {
-		slog.Error("Reload", "err", err)
+		slog.Error("[Reload]", "json unmarshal err", err)
 		return err
 	}
 	return nil

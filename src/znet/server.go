@@ -17,6 +17,8 @@ type Server struct {
 	IPVersion   string
 	MsgHandler  ziface.IMsgHandler
 	ConnManager ziface.IConnectionManager
+	OnConnStart func(connection ziface.IConnection)
+	OnConnStop  func(connection ziface.IConnection)
 }
 
 func (s *Server) Start() {
@@ -95,6 +97,34 @@ func (s *Server) Init() {
 func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
 	s.MsgHandler.AddRouter(msgID, router)
 }
+
+//  设置OnConnStart函数
+
+func (s *Server) SetOnConnStart(hookFunc func(connection ziface.IConnection)) {
+	s.OnConnStart = hookFunc
+}
+
+//  设置OnConnStop函数
+
+func (s *Server) SetOnConnStop(hookFunc func(connection ziface.IConnection)) {
+	s.OnConnStop = hookFunc
+}
+
+//  调用OnConnStart函数
+
+func (s *Server) CallOnConnStart(connection ziface.IConnection) {
+	if s.OnConnStart != nil {
+		s.OnConnStart(connection)
+	}
+}
+
+// 调用OnConnStop函数
+func (s *Server) CallOnConnStop(connection ziface.IConnection) {
+	if s.OnConnStop != nil {
+		s.OnConnStop(connection)
+	}
+}
+
 func NewServer() ziface.IServer {
 	return &Server{
 		Name:        utils.GlobalObject.Name,

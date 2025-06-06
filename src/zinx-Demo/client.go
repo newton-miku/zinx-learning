@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net"
 	"os"
@@ -35,7 +34,7 @@ func init() {
 func runClient() {
 	// 等待2秒，避免服务器未启动完成
 	time.Sleep(time.Second * 2)
-	log.Printf("[%s]ServerAddr: %s:%d\n", "Client", ServAdd.IP, ServAdd.Port)
+	slog.Info("[Client]", "ServerAddr", ServAdd.IP, "Port", ServAdd.Port)
 	conn, err := net.Dial("tcp", net.JoinHostPort(ServAdd.IP, fmt.Sprint(ServAdd.Port)))
 	if err != nil {
 		slog.Error("Client", "dial err", err)

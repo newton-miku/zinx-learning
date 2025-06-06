@@ -37,13 +37,28 @@ func (r *EchoRouter) Handle(request ziface.IRequest) {
 	msg := fmt.Sprintf("Echo Server: %s", request.GetData())
 	err := request.GetConnection().SendMsg(1, []byte(msg))
 	if err != nil {
-		log.Printf("[Echo Server] Handle Send Error %s\n", err)
+		slog.Error("[Router]",
+			"RouterName", "Echo",
+			"msg", "Handle Send Error",
+			"err", err)
 	}
 }
-
+func ConnStart(connection ziface.IConnection) {
+	slog.Debug("ConnStart",
+		"msg", "Conn Start")
+	connection.SendMsg(101, fmt.Appendf(nil, "[ConnStart]Hello,You are %s", connection.RemoteAddr()))
+}
+func ConnStop(connection ziface.IConnection) {
+	slog.Debug("ConnStop",
+		"msg", "Conn Stop")
+	//  此处通过打印模拟在数据库中设置相关客户端的状态
+	fmt.Println("Conn lost,ID:", connection.GetConnID())
+}
 func runServer() {
 	//创建一个server服务
 	s := znet.NewServer()
+	s.SetOnConnStart(ConnStart)
+	s.SetOnConnStop(ConnStop)
 	s.AddRouter(0, &HelloRouter{})
 	s.AddRouter(1, &EchoRouter{})
 	//启动server

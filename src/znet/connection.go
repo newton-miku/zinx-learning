@@ -40,11 +40,11 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 }
 func (c *Connection) StartReader() {
 	defer c.Stop()
+	dp := NewDataPack()
+	headData := make([]byte, dp.GetHeadLen())
 	for {
-		dp := NewDataPack()
-		headData := make([]byte, dp.GetHeadLen())
 		_, err := io.ReadFull(c.GetTCPConnection(), headData)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			slog.Error("Conn", "ConnID", c.connID, "msg", "read head err", "err", err)
 			break
 		}
@@ -97,12 +97,14 @@ func (c *Connection) Start() {
 	go c.StartReader()
 	//  启动写Goroutine
 	go c.StartWriter()
+	c.fatherServer.CallOnConnStart(c)
 }
 func (c *Connection) Stop() {
 	if !c.isClosed {
 		slog.Debug("Conn", "ConnID", c.connID, "msg", "connection stoped")
 		c.isClosed = true
 		c.ExitChan <- struct{}{}
+		c.fatherServer.CallOnConnStop(c)
 		c.conn.Close()
 		//  从连接管理器中移除
 		c.fatherServer.GetConnectionManager().Remove(c)
