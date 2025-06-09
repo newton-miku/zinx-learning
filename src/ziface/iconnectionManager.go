@@ -11,4 +11,6 @@ type IConnectionManager interface {
 	Len() int
 	//  清空连接
 	ClearConn()
+	//  遍历所有连接,并调用回调函数
+	ForEach(func(IConnection)) (IConnection, error)
 }

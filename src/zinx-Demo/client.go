@@ -12,8 +12,9 @@ import (
 )
 
 type ServerAddr struct {
-	IP   string `json:"Host"`
-	Port int
+	IP        string `json:"Host"`
+	Port      int
+	sessionID string
 }
 
 var ServAdd ServerAddr
@@ -43,6 +44,48 @@ func runClient() {
 	slog.Info("Client", "msg", "started")
 	defer conn.Close()
 	var msgType uint32 = 0
+	//使用协程读取服务器返回的消息，避免影响发送数据流程
+	go func() {
+		dp := znet.NewDataPack()
+		header := make([]byte, dp.GetHeadLen())
+		for {
+			_, err := io.ReadFull(conn, header)
+			if err != nil {
+				slog.Error("Client", "read err", err)
+				os.Exit(1)
+			}
+			msgHead, err := dp.Unpack(header)
+			if err != nil {
+				slog.Error("Client", "unpack err", err)
+				os.Exit(1)
+			}
+			if msgHead.GetDataLen() > 0 {
+				data := make([]byte, msgHead.GetDataLen())
+				_, err := io.ReadFull(conn, data)
+				if err != nil {
+					slog.Error("Client", "read err", err)
+					os.Exit(1)
+				}
+				slog.Info("Client", "msgID", msgHead.GetMsgID(), "msgInfo", data)
+				if msgHead.GetMsgID() == 102 {
+					ServAdd.sessionID = string(data)
+				}
+			}
+			//当收到id==0的hello消息时，将msgType改为1
+			if msgHead.GetMsgID() == 0 {
+				msgType = 1
+			} else if msgHead.GetMsgID() == 3 {
+				// 收到验证请求，回传 sessionID
+				dp := znet.NewDataPack()
+				msg, _ := dp.Pack(znet.NewMessage(2, []byte(ServAdd.sessionID)))
+				_, err = conn.Write(msg)
+				if err != nil {
+					slog.Error("Client", "write session verify err", err)
+					os.Exit(1)
+				}
+			}
+		}
+	}()
 	for {
 		//获取当前时间并格式化
 		sft := time.Now().Format("2006-01-02 15:04:05")
@@ -59,33 +102,6 @@ func runClient() {
 			slog.Error("Client", "write err", err)
 			return
 		}
-		//使用协程读取服务器返回的消息，避免影响发送数据流程
-		go func() {
-			header := make([]byte, dp.GetHeadLen())
-			_, err := io.ReadFull(conn, header)
-			if err != nil {
-				slog.Error("Client", "read err", err)
-				return
-			}
-			msgHead, err := dp.Unpack(header)
-			if err != nil {
-				slog.Error("Client", "unpack err", err)
-				return
-			}
-			if msgHead.GetDataLen() > 0 {
-				data := make([]byte, msgHead.GetDataLen())
-				_, err := io.ReadFull(conn, data)
-				if err != nil {
-					slog.Error("Client", "read err", err)
-					return
-				}
-				slog.Info("Client", "msgID", msgHead.GetMsgID(), "msgInfo", string(data))
-			}
-			//当收到id==0的hello消息时，将msgType改为1
-			if msgHead.GetMsgID() == 0 {
-				msgType = 1
-			}
-		}()
 		time.Sleep(1 * time.Second)
 	}
 }

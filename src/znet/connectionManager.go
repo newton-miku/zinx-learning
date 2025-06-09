@@ -20,6 +20,15 @@ func NewConnectionManager() *ConnectionManager {
 	}
 }
 
+func (cm *ConnectionManager) ForEach(callback func(ziface.IConnection)) (ziface.IConnection, error) {
+	cm.connLock.RLock()
+	defer cm.connLock.RUnlock()
+	for _, conn := range cm.connections {
+		callback(conn)
+	}
+	return nil, nil
+}
+
 // 新增连接
 func (cm *ConnectionManager) Add(conn ziface.IConnection) {
 	cm.connLock.Lock()

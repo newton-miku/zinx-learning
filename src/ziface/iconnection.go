@@ -15,6 +15,13 @@ type IConnection interface {
 	RemoteAddr() net.Addr
 	// 发送消息
 	SendMsg(uint32, []byte) error
+
+	// 获取属性
+	GetProperty(string) (interface{}, error)
+	// 设置属性
+	SetProperty(string, interface{})
+	// 移除属性
+	RemoveProperty(string)
 }
 
 type ConnectionHandler func(*net.TCPConn, []byte, int) error

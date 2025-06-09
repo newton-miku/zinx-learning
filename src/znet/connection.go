@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"sync"
 	"zinx/utils"
 	"zinx/ziface"
 )
@@ -22,6 +23,35 @@ type Connection struct {
 	msgChan chan []byte
 	//  退出信号的channel
 	ExitChan chan struct{} //  退出信号，使用struct不占内存，效率更高
+
+	//  属性
+	property map[string]interface{}
+	//  属性读写锁
+	propertyLock sync.RWMutex
+}
+
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	c.propertyLock.RLock()
+	defer c.propertyLock.RUnlock()
+
+	if v, ok := c.property[key]; ok {
+		return v, nil
+	}
+	return nil, errors.New("property not found")
+}
+
+func (c *Connection) RemoveProperty(key string) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	delete(c.property, key)
+}
+
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	c.property[key] = value
 }
 
 func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandler) *Connection {
@@ -33,6 +63,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 		MsgHandler:   msgHandler,
 		msgChan:      make(chan []byte),
 		ExitChan:     make(chan struct{}),
+		property:     make(map[string]interface{}),
 	}
 	//  添加到连接管理器中
 	c.fatherServer.GetConnectionManager().Add(c)
