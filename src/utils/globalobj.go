@@ -50,7 +50,7 @@ func (gb *GlobalObj) Reload() error {
 func init() {
 	GlobalObject = &GlobalObj{
 		Name:                   "ZinxServerApp",
-		Version:                "v0.9",
+		Version:                "v1.0",
 		MaxPacketSize:          4096,
 		MaxConn:                1000,
 		Host:                   "0.0.0.0",
